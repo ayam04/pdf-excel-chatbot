@@ -6,7 +6,6 @@ from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.indexes.vectorstore import VectorstoreIndexCreator
 from langchain.llms.openai import OpenAI
 from langchain.agents import initialize_agent, Tool
-from langchain.prompts import PromptTemplate
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 load_dotenv()
