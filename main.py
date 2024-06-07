@@ -1,5 +1,5 @@
 import os
-import json
+import warnings
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -8,6 +8,7 @@ from langchain.vectorstores.faiss import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.llms.openai import OpenAI
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_KEY")
