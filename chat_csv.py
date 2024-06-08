@@ -1,45 +1,40 @@
 import os
 import warnings
+import pandas as pd
 from dotenv import load_dotenv
-from langchain.llms.openai import OpenAI
-from langchain.chains import RetrievalQA
-from langchain.agents import initialize_agent, Tool
-from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.indexes.vectorstore import VectorstoreIndexCreator
+from sqlalchemy import create_engine
+from langchain_openai import ChatOpenAI
+from langchain_community.utilities import SQLDatabase
+from langchain_community.agent_toolkits import create_sql_agent
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 load_dotenv()
-
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_KEY")
 
 def load_csv(file):
-    loader = CSVLoader(file_path=file)
-    return loader
+    filename = os.path.basename(file)
+    if file.endswith(".csv"):
+        df = pd.read_csv(file)
+    elif file.endswith(".xlsx"):
+        df = pd.read_excel(file)
 
-def create_csv_index(file):
-    index_creator = VectorstoreIndexCreator()
-    docsearch = index_creator.from_loaders([load_csv(file)])
-    return docsearch
+    engine = create_engine(f"sqlite:///{filename}.db")
+    df.to_sql(f"{filename}", con=engine, index=False, if_exists="replace")
+    db = SQLDatabase(engine)
+    return db
 
-def qna_csv(docsearch):
-    qa_chain = RetrievalQA.from_chain_type(llm=OpenAI(), chain_type="stuff", retriever=docsearch.vectorstore.as_retriever(), input_key="question")
-    
-    tools = [
-        Tool(
-            name="Answer Questions",
-            func=lambda x: qa_chain({"question": x})['result'],
-            description="Use this tool to answer questions based on the CSV data."
-        )
-    ]
-    
-    agent = initialize_agent(
-        tools=tools,
-        llm=OpenAI(),
-        agent="zero-shot-react-description"
+def create_agent(file):
+    agent = create_sql_agent(
+        db=load_csv(file),
+        llm=ChatOpenAI(model="gpt-3.5-turbo", temperature=0),
+        agent="openai-tools",
+        verbose=False
     )
-    
+    return agent
+
+def qna_csv(agent):
     while True:
-        command = input("Ask a question or give a command: ")
+        command = input("Ask a question: ")
         if command.lower().strip() == "exit":
             break
         else:
@@ -47,6 +42,6 @@ def qna_csv(docsearch):
             print(result)
 
 if __name__ == "__main__":
-    csv_path = "Excels/heart.csv"
-    docsearch = create_csv_index(csv_path)
-    qna_csv(docsearch)
+    csv_path = "pdf-excel-chatbot/Excels/Day 5 survey with email - values.csv"
+    agent = create_agent(csv_path)
+    qna_csv(agent)

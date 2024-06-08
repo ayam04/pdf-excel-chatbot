@@ -6,7 +6,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 from langchain.chains.question_answering import load_qa_chain
-from langchain.llms.openai import OpenAI
+from langchain_openai import OpenAI
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 load_dotenv()
